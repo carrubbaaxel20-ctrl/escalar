@@ -1,0 +1,61 @@
+name: Gerar APK do Escale
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Baixar o projeto
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar ferramentas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git zip unzip autoconf automake libtool \
+            pkg-config zlib1g-dev libncurses5-dev \
+            libncursesw5-dev libtinfo5 cmake \
+            libffi-dev libssl-dev gettext autopoint
+          python -m pip install \
+            "buildozer==1.5.0" "cython==0.29.34" \
+            "setuptools<71" wheel virtualenv
+
+      - name: Preparar suporte ao Pygame
+        run: |
+          mkdir -p p4a-recipes/pygame-ce
+          curl --fail --location --retry 3 \
+            "https://gist.githubusercontent.com/pmp-p/0f75774dc4ef76009ee19d6aa3a148bd/raw/03acfc307051438f9d0f5ef0507527920b4ee65c/pygame-ce-recipe.py" \
+            -o p4a-recipes/pygame-ce/__init__.py
+          python -m py_compile p4a-recipes/pygame-ce/__init__.py
+
+      - name: Gerar aplicativo de teste
+        run: |
+          sed -i '/^\[app\]/a android.accept_sdk_license = True' buildozer.spec
+          buildozer -v android debug
+
+      - name: Disponibilizar APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Escale-APK
+          path: bin/*.apk
+          if-no-files-found: error
