@@ -46,6 +46,7 @@ jobs:
           curl --fail --location --retry 3 \
             "https://gist.githubusercontent.com/pmp-p/0f75774dc4ef76009ee19d6aa3a148bd/raw/03acfc307051438f9d0f5ef0507527920b4ee65c/pygame-ce-recipe.py" \
             -o p4a-recipes/pygame-ce/__init__.py
+          echo 'recipe.hostpython_prerequisites = ["setuptools<71", "wheel", "Cython==3.0.11"]' >> p4a-recipes/pygame-ce/__init__.py
           python -m py_compile p4a-recipes/pygame-ce/__init__.py
 
       - name: Gerar aplicativo de teste
